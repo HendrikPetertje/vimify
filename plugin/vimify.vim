@@ -206,14 +206,14 @@ auth_req = urllib.request.Request(auth_url,
 "grant_type=client_credentials".encode('ascii'),)
 auth_req.add_header('Authorization', "Basic {}".format(vim.eval("g:spotify_token")))
 auth_resp = urllib.request.urlopen(auth_req)
-auth_code = json.loads(auth_resp.read())["access_token"]
+auth_code = json.loads(auth_resp.read().decode('utf-8'))["access_token"]
 
 search_query = vim.eval("a:query").replace(' ', '+')
 url = "https://api.spotify.com/v1/search?q={}&type=track".format(search_query)
 req = urllib.request.Request(url,)
 req.add_header('Authorization', "Bearer {}".format(auth_code))
 resp = urllib.request.urlopen(req)
-j = json.loads(resp.read())["tracks"]["items"]
+j = json.loads(resp.read().decode('utf-8'))["tracks"]["items"]
 if len(j) is not 0:
   IDs = []
   ListedElements = []
