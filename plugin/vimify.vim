@@ -23,8 +23,15 @@ osSystem = platform.system()
 
 IDs = []
 ListedElements = []
+access_token = None
+refresh_token = None
 
-def populate(track, albumName=None, albumIDNumber=None):
+with open('/Users/ben/.config/vimify/vimify_config.json') as json_file:
+    data = json.load(json_file)
+    access_token = data['tokens']['access_token']
+    refresh_token = data['tokens']['refresh_token']
+
+def populate_track(track, albumName=None, albumIDNumber=None):
     name = track["name"].replace("'", "")
     uri = track["uri"][14:]
 
@@ -40,6 +47,16 @@ def populate(track, albumName=None, albumIDNumber=None):
     ListedElements.append(info)
 
     info = {"uri": uri, "artistID": artistID, "albumID": albumID}
+    IDs.append(info)
+
+def populate_playlist(playlist):
+    name = playlist["name"].replace("'", "")
+    uri = playlist["uri"][14:]
+
+    info = {"track": name}
+    ListedElements.append(info)
+
+    info = {"uri": uri}
     IDs.append(info)
 
 endpython
@@ -219,7 +236,7 @@ if len(j) is not 0:
   IDs = []
   ListedElements = []
   for track in j[:min(20, len(j))]:
-    populate(track)
+    populate_track(track)
     vim.command('call s:VimifySearchBuffer(a:query, "Search")')
 else:
     vim.command("echo 'No tracks found'")
@@ -230,24 +247,17 @@ function! s:ListPlaylists()
 python3 << endpython
 import vim
 
-auth_url = "https://accounts.spotify.com/api/token"
-auth_req = urllib.request.Request(auth_url,
-"grant_type=client_credentials".encode('ascii'),)
-auth_req.add_header('Authorization', "Basic {}".format(vim.eval("g:spotify_token")))
-auth_resp = urllib.request.urlopen(auth_req)
-auth_code = json.loads(auth_resp.read())["access_token"]
-
 url = "https://api.spotify.com/v1/me/playlists"
 req = urllib.request.Request(url,)
-req.add_header('Authorization', "Bearer {}".format(auth_code))
+req.add_header('Authorization', "Bearer {}".format(access_token))
 resp = urllib.request.urlopen(req)
 j = json.loads(resp.read())["items"]
 if len(j) is not 0:
   IDs = []
   ListedElements = []
   for playlist in j[:min(20, len(j))]:
-    populate(playlist)
-    vim.command('call s:VimifyPlaylistBuffer(a:query, "Playlist")')
+    populate_playlist(playlist)
+    vim.command('call s:VimifyPlaylistBuffer("Playlist")')
 else:
     vim.command("echo 'No playlists found'")
 endpython
@@ -256,7 +266,7 @@ endfunction
 " *************************************************************************** "
 " ***************************      Interface       ************************** "
 " *************************************************************************** "
-function! s:VimifyPlaylistBuffer(query, type)
+function! s:VimifyPlaylistBuffer(type)
     if buflisted('Vimify')
         bd Vimify
     endif
@@ -269,7 +279,7 @@ function! s:VimifyPlaylistBuffer(query, type)
 python3 << endpython
 import vim
 for element in ListedElements:
-    row = "{:<45}              ".format(element["playlist"][:45])
+    row = "{:<45}              ".format(element["track"][:45])
     vim.command('call append(line("$"), \'{}\')'.format(row))
 endpython
     resize 14
