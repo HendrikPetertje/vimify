@@ -51,7 +51,7 @@ def populate_track(track, albumName=None, albumIDNumber=None):
 
 def populate_playlist(playlist):
     name = playlist["name"].replace("'", "")
-    uri = playlist["uri"][14:]
+    uri = playlist["uri"]
 
     info = {"track": name}
     ListedElements.append(info)
@@ -211,6 +211,26 @@ elif osSystem == 'Linux' or osSystem == "Linux2":
 endpython
 endfunction
 
+function! s:LoadPlaylist(uri)
+call s:Pause()
+python3 << endpython
+import vim
+if osSystem == 'Darwin':
+  subprocess.call(['osascript',
+                   '-e'
+                   'tell app "spotify" to play track "'+vim.eval("a:uri")+'"'],
+                   stdout=open(os.devnull, 'wb'))
+elif osSystem == 'Linux' or osSystem == "Linux2":
+  subprocess.call(['dbus-send',
+                   '--print-reply',
+                   '--dest=org.mpris.MediaPlayer2.spotify',
+                   '/org/mpris/MediaPlayer2',
+                   'org.mpris.MediaPlayer2.Player.OpenUri',
+                   'string:'+vim.eval("a:uri")],
+                   stdout=open(os.devnull, 'wb'))
+endpython
+endfunction
+
 " *************************************************************************** "
 " ***********************      SpotfyAPI wrappers      ********************** "
 " *************************************************************************** "
@@ -257,7 +277,7 @@ if len(j) is not 0:
   ListedElements = []
   for playlist in j[:min(20, len(j))]:
     populate_playlist(playlist)
-    vim.command('call s:VimifyPlaylistBuffer("Playlist")')
+    vim.command('call s:VimifyPlaylistBuffer()')
 else:
     vim.command("echo 'No playlists found'")
 endpython
@@ -266,13 +286,12 @@ endfunction
 " *************************************************************************** "
 " ***************************      Interface       ************************** "
 " *************************************************************************** "
-function! s:VimifyPlaylistBuffer(type)
+function! s:VimifyPlaylistBuffer()
     if buflisted('Vimify')
         bd Vimify
     endif
     below new Vimify
     call append(0, 'Spotify Playlists:')
-    call append(line('$'), "Playlist                                                                  ")
     call append(line('$'), "--------------------------------------------------
                            \------------------------------------------------")
 
@@ -288,7 +307,7 @@ endpython
     setlocal nonumber
     setlocal nowrap
     setlocal buftype=nofile
-    map <buffer> <Enter> <esc>:SpSelect<CR>
+    map <buffer> <Enter> <esc>:SpSelectPlaylist<CR>
     map <buffer> <Space> <esc>:SpToggle<CR>
 
 endfunction
@@ -344,15 +363,28 @@ if row >= 0:
         vim.command("echo 'Playing Album'")
 endpython
 endfunction
+
+function! s:SelectPlaylist()
+   let l:row = getpos('.')[1]-5
+   let l:col = getpos('.')[2]
+python3 << endpython
+import vim
+row = int(vim.eval("l:row"))
+uri = str(IDs[row]["uri"])
+vim.command('call s:LoadPlaylist("{}")'.format(uri))
+vim.command("echo 'Playing Playlist'")
+endpython
+endfunction
 " *************************************************************************** "
 " ***************************   Command Bindngs   *************************** "
 " *************************************************************************** "
-command!            Spotify     call s:Toggle()
-command!            SpToggle    call s:Toggle()
-command!            SpPause     call s:Pause()
-command!            SpPlay      call s:Play()
-command!            SpNext      call s:Next()
-command!            SpPrevious  call s:Previous()
-command!            SpSelect    call s:SelectSong()
-command!            SpPlaylists call s:ListPlaylists()
-command! -nargs=1   SpSearch    call s:SearchTrack(<f-args>)
+command!            Spotify          call s:Toggle()
+command!            SpToggle         call s:Toggle()
+command!            SpPause          call s:Pause()
+command!            SpPlay           call s:Play()
+command!            SpNext           call s:Next()
+command!            SpPrevious       call s:Previous()
+command!            SpSelect         call s:SelectSong()
+command!            SpSelectPlaylist call s:SelectPlaylist()
+command!            SpPlaylists      call s:ListPlaylists()
+command! -nargs=1   SpSearch         call s:SearchTrack(<f-args>)
