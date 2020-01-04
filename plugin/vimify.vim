@@ -226,9 +226,62 @@ else:
 endpython
 endfunction
 
+function! s:ListPlaylists()
+python3 << endpython
+import vim
+
+auth_url = "https://accounts.spotify.com/api/token"
+auth_req = urllib.request.Request(auth_url,
+"grant_type=client_credentials".encode('ascii'),)
+auth_req.add_header('Authorization', "Basic {}".format(vim.eval("g:spotify_token")))
+auth_resp = urllib.request.urlopen(auth_req)
+auth_code = json.loads(auth_resp.read())["access_token"]
+
+url = "https://api.spotify.com/v1/me/playlists"
+req = urllib.request.Request(url,)
+req.add_header('Authorization', "Bearer {}".format(auth_code))
+resp = urllib.request.urlopen(req)
+j = json.loads(resp.read())["items"]
+if len(j) is not 0:
+  IDs = []
+  ListedElements = []
+  for playlist in j[:min(20, len(j))]:
+    populate(playlist)
+    vim.command('call s:VimifyPlaylistBuffer(a:query, "Playlist")')
+else:
+    vim.command("echo 'No playlists found'")
+endpython
+endfunction
+
 " *************************************************************************** "
 " ***************************      Interface       ************************** "
 " *************************************************************************** "
+function! s:VimifyPlaylistBuffer(query, type)
+    if buflisted('Vimify')
+        bd Vimify
+    endif
+    below new Vimify
+    call append(0, 'Spotify Playlists:')
+    call append(line('$'), "Playlist                                                                  ")
+    call append(line('$'), "--------------------------------------------------
+                           \------------------------------------------------")
+
+python3 << endpython
+import vim
+for element in ListedElements:
+    row = "{:<45}              ".format(element["playlist"][:45])
+    vim.command('call append(line("$"), \'{}\')'.format(row))
+endpython
+    resize 14
+    normal! gg
+    5
+    setlocal nonumber
+    setlocal nowrap
+    setlocal buftype=nofile
+    map <buffer> <Enter> <esc>:SpSelect<CR>
+    map <buffer> <Space> <esc>:SpToggle<CR>
+
+endfunction
 
 function! s:VimifySearchBuffer(query, type)
     if buflisted('Vimify')
@@ -291,4 +344,5 @@ command!            SpPlay      call s:Play()
 command!            SpNext      call s:Next()
 command!            SpPrevious  call s:Previous()
 command!            SpSelect    call s:SelectSong()
+command!            SpPlaylists call s:ListPlaylists()
 command! -nargs=1   SpSearch    call s:SearchTrack(<f-args>)
