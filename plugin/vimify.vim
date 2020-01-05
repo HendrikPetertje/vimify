@@ -23,13 +23,24 @@ osSystem = platform.system()
 
 IDs = []
 ListedElements = []
-access_token = None
-refresh_token = None
 
-with open('/Users/ben/.config/vimify/vimify_config.json') as json_file:
-    data = json.load(json_file)
-    access_token = data['tokens']['access_token']
-    refresh_token = data['tokens']['refresh_token']
+def generate_access_token():
+    import vim
+    refresh_token = ''
+
+    with open('/Users/ben/.config/vimify/vimify_config.json') as json_file:
+        data = json.load(json_file)
+        refresh_token = data['tokens']['refresh_token']
+
+    auth_url = "https://accounts.spotify.com/api/token"
+    auth_req = urllib.request.Request(auth_url,
+      "grant_type=refresh_token&refresh_token={}".format(refresh_token).encode('ascii'),)
+    auth_req.add_header('Authorization', "Basic {}".format(vim.eval("g:spotify_token")))
+    auth_req.add_header('content-type', 'application/x-www-form-urlencoded')
+    auth_resp = urllib.request.urlopen(auth_req)
+    raw_data = auth_resp.read()
+    access_token = json.loads(raw_data)["access_token"]
+    return access_token
 
 def populate_track(track, albumName=None, albumIDNumber=None):
     name = track["name"].replace("'", "")
@@ -242,7 +253,7 @@ import vim
 search_query = vim.eval("a:query").replace(' ', '+')
 url = "https://api.spotify.com/v1/search?q={}&type=track".format(search_query)
 req = urllib.request.Request(url,)
-req.add_header('Authorization', "Bearer {}".format(access_token))
+req.add_header('Authorization', "Bearer {}".format(generate_access_token()))
 resp = urllib.request.urlopen(req)
 j = json.loads(resp.read())["tracks"]["items"]
 if len(j) is not 0:
@@ -260,9 +271,9 @@ function! s:ListPlaylists()
 python3 << endpython
 import vim
 
-url = "https://api.spotify.com/v1/me/playlists"
+url = "https://api.spotify.com/v1/me/playlists?limit=50"
 req = urllib.request.Request(url,)
-req.add_header('Authorization', "Bearer {}".format(access_token))
+req.add_header('Authorization', "Bearer {}".format(generate_access_token()))
 resp = urllib.request.urlopen(req)
 j = json.loads(resp.read())["items"]
 if len(j) is not 0:
