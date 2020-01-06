@@ -53,8 +53,8 @@ git clone https://github.com/HendrikPetertje/vimify
 This plugin uses Spotify 'Authorization Code Flow' tokens which allow you
 access your private data such as private playlists via Vimify.
 
-Currently Vimify requires that you manually generate a 'refresh token' as part of
-the installation process. This token is then used to automatically generate
+Currently Vimify requires that you manually generate a 'refresh token' as part
+of the installation process. This token is then used to automatically generate
 access tokens when they are needed.
 
 #### Register Spotify API Client

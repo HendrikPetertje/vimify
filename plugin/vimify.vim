@@ -18,6 +18,7 @@ import os
 import platform
 import urllib.request, urllib.error, urllib.parse
 import json
+from os.path import expanduser
 
 osSystem = platform.system()
 
@@ -27,8 +28,9 @@ ListedElements = []
 def generate_access_token():
     import vim
     refresh_token = ''
+    home = expanduser("~")
 
-    with open('/Users/ben/.config/vimify/vimify_config.json') as json_file:
+    with open(home + '/.config/vimify/vimify_config.json') as json_file:
         data = json.load(json_file)
         refresh_token = data['tokens']['refresh_token']
 
