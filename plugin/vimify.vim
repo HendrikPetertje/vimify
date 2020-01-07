@@ -281,7 +281,7 @@ j = json.loads(resp.read())["items"]
 if len(j) is not 0:
   IDs = []
   ListedElements = []
-  for playlist in j[:min(20, len(j))]:
+  for playlist in j[:min(50, len(j))]:
     populate_playlist(playlist)
     vim.command('call s:VimifyPlaylistBuffer()')
 else:
