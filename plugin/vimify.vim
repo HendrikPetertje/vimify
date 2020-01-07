@@ -371,7 +371,7 @@ endpython
 endfunction
 
 function! s:SelectPlaylist()
-   let l:row = getpos('.')[1]-5
+   let l:row = getpos('.')[1]-4
    let l:col = getpos('.')[2]
 python3 << endpython
 import vim
