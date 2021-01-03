@@ -215,7 +215,7 @@ req = urllib.request.Request(url,)
 req.add_header('Authorization', "Bearer {}".format(auth_code))
 resp = urllib.request.urlopen(req)
 j = json.loads(resp.read())["tracks"]["items"]
-if len(j) is not 0:
+if len(j) != 0:
   IDs = []
   ListedElements = []
   for track in j[:min(20, len(j))]:
